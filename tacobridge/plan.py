@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 import pyarrow as pa
 import pyarrow.parquet as pq
 import tacoreader
-from tacoreader._constants import VSI_SUBFILE_PREFIX
 from tacoreader._vsi import parse_vsi_subfile, strip_vsi_prefix
 
 from tacobridge._constants import (
@@ -27,6 +26,7 @@ from tacobridge._constants import (
     METADATA_SOURCE_FILE,
     METADATA_SOURCE_PATH,
     SAMPLE_TYPE_FOLDER,
+    VSI_SUBFILE_PREFIX,
 )
 from tacobridge._exceptions import TacoPlanError
 from tacobridge._logging import get_logger
@@ -57,7 +57,6 @@ def plan_export(dataset: "TacoDataset", output: str | Path) -> ExportPlan:
     if dataset._has_level1_joins:
         raise TacoPlanError("Cannot export dataset with level1+ JOINs")
 
-    # CRITICAL: Read filtered level0 ONCE to avoid RANDOM() re-evaluation
     level0_snapshot: pa.Table = dataset._duckdb.execute(f"SELECT * FROM {dataset._view_name}").fetch_arrow_table()
 
     tasks = _collect_copy_tasks_from_snapshot(dataset, level0_snapshot, output)

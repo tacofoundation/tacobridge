@@ -1,0 +1,151 @@
+{
+    "id": "nested_a",
+    "dataset_version": "1.0.0",
+    "description": "tacobridge test fixture",
+    "licenses": [
+        "CC-BY-4.0"
+    ],
+    "providers": [
+        {
+            "name": "Test",
+            "roles": [
+                "producer"
+            ],
+            "url": null,
+            "links": null
+        }
+    ],
+    "tasks": [
+        "classification"
+    ],
+    "taco_version": "0.5.0",
+    "title": null,
+    "curators": null,
+    "keywords": null,
+    "extent": {
+        "spatial": [
+            -5.949999999999999,
+            37.4,
+            -0.35,
+            43.3
+        ],
+        "temporal": [
+            "2024-01-01T00:00:00Z",
+            "2024-02-26T00:00:00Z"
+        ]
+    },
+    "taco:pit_schema": {
+        "root": {
+            "n": 5,
+            "type": "FOLDER"
+        },
+        "hierarchy": {
+            "1": [
+                {
+                    "n": 15,
+                    "type": [
+                        "FILE",
+                        "FILE",
+                        "FILE"
+                    ],
+                    "id": [
+                        "item_0",
+                        "item_1",
+                        "item_2"
+                    ]
+                }
+            ]
+        }
+    },
+    "taco:field_schema": {
+        "level0": [
+            [
+                "id",
+                "string",
+                "Unique sample identifier within parent scope. Must be unique among siblings."
+            ],
+            [
+                "type",
+                "string",
+                "Sample type discriminator (FILE or FOLDER)."
+            ],
+            [
+                "istac:geometry",
+                "binary",
+                ""
+            ],
+            [
+                "istac:centroid",
+                "binary",
+                ""
+            ],
+            [
+                "istac:time_start",
+                "timestamp[us]",
+                ""
+            ],
+            [
+                "cloud_cover",
+                "double",
+                ""
+            ],
+            [
+                "location",
+                "string",
+                ""
+            ],
+            [
+                "region",
+                "string",
+                ""
+            ],
+            [
+                "internal:current_id",
+                "int64",
+                "Current sample position at this level (0-indexed). Enables O(1) random access and relational JOINs (ZIP, FOLDER, TACOCAT)."
+            ],
+            [
+                "internal:parent_id",
+                "int64",
+                "Foreign key referencing parent sample position in previous level (ZIP, FOLDER, TACOCAT)."
+            ]
+        ],
+        "level1": [
+            [
+                "id",
+                "string",
+                "Unique sample identifier within parent scope. Must be unique among siblings."
+            ],
+            [
+                "type",
+                "string",
+                "Sample type discriminator (FILE or FOLDER)."
+            ],
+            [
+                "band",
+                "string",
+                ""
+            ],
+            [
+                "value",
+                "double",
+                ""
+            ],
+            [
+                "internal:current_id",
+                "int64",
+                "Current sample position at this level (0-indexed). Enables O(1) random access and relational JOINs (ZIP, FOLDER, TACOCAT)."
+            ],
+            [
+                "internal:parent_id",
+                "int64",
+                "Foreign key referencing parent sample position in previous level (ZIP, FOLDER, TACOCAT)."
+            ],
+            [
+                "internal:relative_path",
+                "string",
+                "Relative path from DATA/ directory. Format: {parent_path}/{id} or {id} for level0 (ZIP, FOLDER, TACOCAT)."
+            ]
+        ]
+    }
+}

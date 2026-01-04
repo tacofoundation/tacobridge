@@ -1,5 +1,6 @@
 # tacobridge
 
+[![codecov](https://codecov.io/gh/tacofoundation/tacobridge/graph/badge.svg?token=IkF2DKIsIl)](https://codecov.io/gh/tacofoundation/tacobridge)
 [![PyPI](https://img.shields.io/pypi/v/tacobridge.svg)](https://pypi.python.org/pypi/tacobridge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![BlueSky](https://img.shields.io/badge/bluesky-tacofoundation-1185fe?labelColor=000000&logo=bluesky)](https://bsky.app/profile/tacofoundation.bsky.social)
