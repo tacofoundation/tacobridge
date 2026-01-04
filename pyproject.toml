@@ -1,0 +1,127 @@
+[project]
+name = "tacobridge"
+version = "0.1.0"
+description = "Format conversion and subset export for TACO datasets"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11,<3.14"
+authors = [{name = "Cesar Aybar", email = "cesar.aybar@uv.es"}]
+keywords = [
+    "earth-observation",
+    "geospatial",
+    "machine-learning",
+    "satellite-imagery",
+    "remote-sensing",
+    "ai-ready-datasets",
+    "data-pipeline",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Typing :: Typed",
+]
+dependencies = [
+    "tacotoolbox>=0.26.0",
+    "tacoreader>=2.4.0",
+]
+
+[project.urls]
+Repository = "https://github.com/tacofoundation/tacobridge"
+Documentation = "https://tacofoundation.github.io/tacobridge"
+"Bug Tracker" = "https://github.com/tacofoundation/tacobridge/issues"
+Changelog = "https://github.com/tacofoundation/tacobridge/releases"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "tacobridge"
+version = "0.1.0"
+description = "Format bridge for AI-ready datasets."
+packages = [{include = "tacobridge"}]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.3.4"
+pytest-cov = ">=6.0.0"
+ruff = ">=0.8.4"
+mypy = ">=1.14.1"
+types-tqdm = ">=4.67.0"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "D",      # pydocstyle
+    "S608",   # SQL injection
+]
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "D107",   # Missing docstring in __init__
+    "S608",  # False positive in some cases
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow",
+    "remote: marks tests requiring network access",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["tacobridge"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+strict_optional = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tacoreader",
+    "tacoreader.*",
+    "tacotoolbox",
+    "tacotoolbox.*",
+    "pyarrow",
+    "pyarrow.*",
+    "tqdm",
+]
+ignore_missing_imports = true
