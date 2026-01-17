@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-01-17
+
+### Fixed
+
+* Export now strips `internal:gdal_vsi` column to prevent stale VSI paths in exported datasets
+* `build_local_metadata()` uses per-level path tracking to avoid ID collisions between hierarchy levels
+
+### Changed
+
+* Removed `PARQUET_EXTENSION` import (removed from tacoreader)
+
+### Dependencies
+
+* Requires `tacoreader>=2.4.10`
+
 ## [0.2.0] - 2025-01-04
 
 ### Added

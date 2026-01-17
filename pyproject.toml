@@ -1,6 +1,6 @@
 [project]
 name = "tacobridge"
-version = "0.1.0"
+version = "0.3.0"
 description = "Format conversion and subset export for TACO datasets"
 readme = "README.md"
 license = "MIT"
@@ -30,7 +30,7 @@ classifiers = [
 ]
 dependencies = [
     "tacotoolbox>=0.26.0",
-    "tacoreader>=2.4.0",
+    "tacoreader>=2.4.13",
 ]
 
 [project.urls]

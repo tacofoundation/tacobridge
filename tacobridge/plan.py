@@ -54,12 +54,25 @@ def plan_export(dataset: "TacoDataset", output: str | Path) -> ExportPlan:
     if dataset.pit_schema.root["n"] == 0:
         raise TacoPlanError("Dataset is empty")
 
-    if dataset._has_level1_joins:
-        raise TacoPlanError("Cannot export dataset with level1+ JOINs")
+    # Check for level1+ JOINs via .sql() which may break structure
+    # Note: _joined_levels tracks tables referenced in SQL JOINs (e.g., {"level1", "level2"})
+    # Cascade filters (_filtered_level_views) are allowed as they maintain controlled structure
+    filtered_level_views: dict[int, str] = getattr(dataset, "_filtered_level_views", {})
+    # Convert filtered level indices to the format used in _joined_levels (e.g., "level1")
+    filtered_level_names = {f"level{lvl}" for lvl in filtered_level_views.keys()}
+    # Unsafe joins are those NOT covered by cascade filters
+    unsafe_joins = dataset._joined_levels - filtered_level_names
+    if unsafe_joins:
+        raise TacoPlanError(
+            "Cannot export dataset with level1+ JOINs.\n"
+            f"Joined levels: {sorted(unsafe_joins)}\n"
+            "Use filter_bbox/filter_datetime with level parameter instead of raw SQL JOINs."
+        )
 
     level0_snapshot: pa.Table = dataset._duckdb.execute(f"SELECT * FROM {dataset._view_name}").fetch_arrow_table()
 
-    tasks = _collect_copy_tasks_from_snapshot(dataset, level0_snapshot, output)
+    # filtered_level_views already extracted above for the unsafe joins check
+    tasks = _collect_copy_tasks_from_snapshot(dataset, level0_snapshot, output, filtered_level_views)
     levels, local_metadata = reindex_metadata_from_snapshot(dataset, level0_snapshot)
     collection = prepare_collection(dataset)
 
@@ -130,21 +143,32 @@ def plan_folder2zip(source: str | Path, output: str | Path) -> Folder2ZipPlan:
 def _collect_copy_tasks(dataset: "TacoDataset", output: Path) -> list[CopyTask]:
     """Collect all CopyTasks from dataset for byte transfer."""
     table: pa.Table = dataset._duckdb.execute(f"SELECT * FROM {dataset._view_name}").fetch_arrow_table()
-    return _collect_copy_tasks_from_snapshot(dataset, table, output)
+    filtered_level_views: dict[int, str] = getattr(dataset, "_filtered_level_views", {})
+    return _collect_copy_tasks_from_snapshot(dataset, table, output, filtered_level_views)
 
 
 def _collect_copy_tasks_from_snapshot(
     dataset: "TacoDataset",
     level0_snapshot: pa.Table,
     output: Path,
+    filtered_level_views: dict[int, str],
 ) -> list[CopyTask]:
-    """Collect all CopyTasks from snapshot for byte transfer."""
+    """Collect all CopyTasks from snapshot for byte transfer.
+
+    Args:
+        dataset: Source TacoDataset
+        level0_snapshot: Pre-fetched level0 table
+        output: Output directory path
+        filtered_level_views: Cascade filter views mapping level -> view_name
+    """
     tasks: list[CopyTask] = []
     data_dir = output / FOLDER_DATA_DIR
 
     for row in level0_snapshot.to_pylist():
         if row["type"] == SAMPLE_TYPE_FOLDER:
-            children_tasks = _collect_folder_children(dataset, row, data_dir, level=0)
+            children_tasks = _collect_folder_children(
+                dataset, row, data_dir, level=0, filtered_level_views=filtered_level_views
+            )
             tasks.extend(children_tasks)
         else:
             vsi_path = row[METADATA_GDAL_VSI]
@@ -161,16 +185,27 @@ def _collect_folder_children(
     folder_row: dict[str, Any],
     data_dir: Path,
     level: int,
+    filtered_level_views: dict[int, str],
 ) -> list[CopyTask]:
-    """Recursively collect CopyTasks for folder children."""
+    """Recursively collect CopyTasks for folder children.
+
+    Args:
+        dataset: Source TacoDataset
+        folder_row: Parent folder metadata row
+        data_dir: Output data directory
+        level: Current hierarchy level
+        filtered_level_views: Cascade filter views mapping level -> view_name
+    """
     tasks: list[CopyTask] = []
     current_id = folder_row[METADATA_CURRENT_ID]
     next_level = level + 1
-    view_name = f"level{next_level}"
 
     max_depth: int = dataset.pit_schema.max_depth()
     if next_level > max_depth:
         return tasks
+
+    # Use filtered view if cascade filter was applied at this level
+    view_name = filtered_level_views.get(next_level, f"level{next_level}")
 
     children = _query_children(
         dataset,
@@ -182,7 +217,7 @@ def _collect_folder_children(
 
     for child in children.to_pylist():
         if child["type"] == SAMPLE_TYPE_FOLDER:
-            sub_tasks = _collect_folder_children(dataset, child, data_dir, next_level)
+            sub_tasks = _collect_folder_children(dataset, child, data_dir, next_level, filtered_level_views)
             tasks.extend(sub_tasks)
         else:
             vsi_path = child[METADATA_GDAL_VSI]

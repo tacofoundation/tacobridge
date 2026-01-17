@@ -15,7 +15,6 @@ from tacoreader._constants import (
     METADATA_SIZE,
     METADATA_SOURCE_FILE,
     METADATA_SOURCE_PATH,
-    PARQUET_EXTENSION,
     SAMPLE_TYPE_FILE,
     SAMPLE_TYPE_FOLDER,
     TACOZIP_EXTENSIONS,
@@ -39,7 +38,6 @@ __all__ = [
     "METADATA_SIZE",
     "METADATA_SOURCE_FILE",
     "METADATA_SOURCE_PATH",
-    "PARQUET_EXTENSION",
     "SAMPLE_TYPE_FILE",
     "SAMPLE_TYPE_FOLDER",
     "TACOZIP_EXTENSIONS",
@@ -74,7 +72,7 @@ CONCAT_COLUMNS: tuple[str, ...] = (
 )
 """Columns added during concat operations to track provenance."""
 
-EXPORT_STRIP_COLUMNS: tuple[str, ...] = ZIP_ONLY_COLUMNS + CONCAT_COLUMNS
+EXPORT_STRIP_COLUMNS: tuple[str, ...] = ZIP_ONLY_COLUMNS + CONCAT_COLUMNS + (METADATA_GDAL_VSI,)
 """All columns to remove when exporting filtered/concatenated datasets."""
 
 LEVEL_PARQUET_TEMPLATE = "level{}.parquet"

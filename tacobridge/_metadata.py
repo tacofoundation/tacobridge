@@ -105,6 +105,9 @@ def reindex_metadata_from_snapshot(
     For concatenated datasets, uses (source_key, current_id) as composite key
     since current_id values can repeat across different sources.
 
+    Uses _filtered_level_views when available (from cascade filter operations)
+    to ensure exported metadata matches the filtered dataset structure.
+
     Args:
         dataset: Source TacoDataset for accessing deeper levels
         level0_snapshot: Pre-fetched level0 table (avoids RANDOM() re-evaluation)
@@ -119,6 +122,8 @@ def reindex_metadata_from_snapshot(
     has_source_path = METADATA_SOURCE_PATH in level0_snapshot.schema.names
     has_source_file = METADATA_SOURCE_FILE in level0_snapshot.schema.names
 
+    filtered_level_views: dict[int, str] = getattr(dataset, "_filtered_level_views", {})
+
     for level_idx in range(max_depth + 1):
         if level_idx == 0:
             rows: list[dict[str, Any]] = level0_snapshot.to_pylist()
@@ -131,7 +136,7 @@ def reindex_metadata_from_snapshot(
             table = level0_snapshot
             table = reindex_table(table, range(table.num_rows), range(table.num_rows))
         else:
-            view_name = f"level{level_idx}"
+            view_name = filtered_level_views.get(level_idx, f"level{level_idx}")
             table = dataset._duckdb.execute(f"SELECT * FROM {view_name}").fetch_arrow_table()
             rows = table.to_pylist()
 
@@ -172,6 +177,9 @@ def build_local_metadata(levels: list[pa.Table]) -> dict[str, pa.Table]:
     Creates a mapping from folder paths to their children's metadata tables.
     Used for writing DATA/{folder}/__meta__ files.
 
+    Builds paths recursively by tracking parent paths per level, ensuring correct
+    full paths for nested folder structures (e.g., DATA/date/region/).
+
     Args:
         levels: List of consolidated level tables
 
@@ -179,6 +187,7 @@ def build_local_metadata(levels: list[pa.Table]) -> dict[str, pa.Table]:
         Dict mapping "DATA/{folder_path}/" to children PyArrow tables
     """
     local_metadata: dict[str, pa.Table] = {}
+    paths_by_level: list[dict[int, str]] = [{} for _ in range(len(levels))]
 
     for level_idx in range(len(levels) - 1):
         current_level = levels[level_idx]
@@ -192,11 +201,16 @@ def build_local_metadata(levels: list[pa.Table]) -> dict[str, pa.Table]:
 
         for folder in folders.to_pylist():
             current_id = int(folder[METADATA_CURRENT_ID])
+            parent_id = int(folder[METADATA_PARENT_ID])
 
             if level_idx == 0:
-                folder_path = f"{FOLDER_DATA_DIR}/{folder['id']}/"
+                rel_path = folder["id"]
             else:
-                folder_path = f"{FOLDER_DATA_DIR}/{folder[METADATA_RELATIVE_PATH]}/"
+                parent_path = paths_by_level[level_idx - 1].get(parent_id, "")
+                rel_path = f"{parent_path}/{folder['id']}" if parent_path else folder["id"]
+
+            paths_by_level[level_idx][current_id] = rel_path
+            folder_path = f"{FOLDER_DATA_DIR}/{rel_path}/"
 
             children_indices = [i for i, pid in enumerate(next_parent_ids) if pid == current_id]
 
